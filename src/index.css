@@ -1,0 +1,54 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+:root {
+  color-scheme: light;
+}
+
+html,
+body,
+#root {
+  height: 100%;
+  margin: 0;
+}
+
+body {
+  background: #f4f8f6;
+  color: #0e2a20;
+  -webkit-font-smoothing: antialiased;
+  text-rendering: optimizeLegibility;
+}
+
+/* Subtle dotted texture on the chat canvas (matches the Stitch mock) */
+.dot-grid {
+  background-color: #f4f8f6;
+  background-image: radial-gradient(rgba(12, 142, 80, 0.06) 1px, transparent 1px);
+  background-size: 22px 22px;
+}
+
+/* typing dots */
+@keyframes blink {
+  0%, 80%, 100% { opacity: 0.2; }
+  40% { opacity: 1; }
+}
+.dot {
+  animation: blink 1.4s infinite both;
+}
+.dot:nth-child(2) { animation-delay: 0.2s; }
+.dot:nth-child(3) { animation-delay: 0.4s; }
+
+/* message entrance */
+@keyframes rise {
+  from { opacity: 0; transform: translateY(6px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+.rise {
+  animation: rise 0.28s ease-out both;
+}
+
+/* thin scrollbar */
+.scroll-thin::-webkit-scrollbar { width: 8px; }
+.scroll-thin::-webkit-scrollbar-thumb { background: rgba(12, 142, 80, 0.18); border-radius: 4px; }
+.scroll-thin::-webkit-scrollbar-thumb:hover { background: rgba(12, 142, 80, 0.32); }
+.scroll-thin::-webkit-scrollbar-track { background: transparent; }
