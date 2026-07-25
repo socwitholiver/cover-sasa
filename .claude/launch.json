@@ -6,6 +6,12 @@
       "runtimeExecutable": "npm",
       "runtimeArgs": ["run", "web"],
       "port": 5173
+    },
+    {
+      "name": "cover-sasa-preview",
+      "runtimeExecutable": "npm",
+      "runtimeArgs": ["run", "web", "--", "--port", "5188", "--strictPort"],
+      "port": 5188
     }
   ]
 }

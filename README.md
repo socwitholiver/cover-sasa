@@ -29,6 +29,11 @@ would actually use, and it always ends with the out-of-pocket number:
 > _"Yes — SHA covers a C-section. At a public hospital you pay **Ksh 0**. SHA pays
 > the hospital Ksh 30,000, covering about 3 days. Bring your SHA card and ID."_
 
+Alongside the plain reply, every answer renders a **Coverage card** — an at-a-glance
+summary of status (covered / partial / not covered), the public vs. private
+out-of-pocket cost, key limits, and the next step to take. The app also includes a
+**Digital SHA Card** view and quick-action chips for the most common questions.
+
 ## How it works
 
 ```
@@ -44,6 +49,19 @@ would actually use, and it always ends with the out-of-pocket number:
 to live directly in the prompt ([`server/sha-data.js`](server/sha-data.js)) — so
 answers stay accurate and fast with zero retrieval plumbing. To update coverage,
 edit that one file.
+
+Each answer also carries a reserved `§§CARD§§` token followed by a one-line JSON
+object describing the coverage. The frontend hides the raw JSON and renders it as
+the Coverage card, so the structured data and the chat reply come from the same
+stream.
+
+### Demo mode (no API key)
+
+If `ANTHROPIC_API_KEY` is **not** set, the backend automatically runs in **demo
+mode** — it streams realistic, pre-written answers (with Coverage cards) from
+[`server/mock.js`](server/mock.js) so the whole app can be run and demoed without a
+key. Set a key to get live answers from Claude. The `/api/health` endpoint reports
+which mode is active (`"live"` or `"demo"`).
 
 ## Tech stack
 
@@ -63,7 +81,7 @@ edit that one file.
 npm install
 ```
 
-### 2. Add your API key
+### 2. Add your API key _(optional)_
 
 ```bash
 cp .env.example .env
@@ -74,6 +92,9 @@ Open `.env` and set your key:
 ```
 ANTHROPIC_API_KEY=sk-ant-...
 ```
+
+Skip this step to run in **demo mode** — the app still works end-to-end with
+pre-written answers (see [Demo mode](#demo-mode-no-api-key) above).
 
 ### 3. Run
 
@@ -105,7 +126,8 @@ cover-sasa/
 │   ├── main.jsx          # React entry
 │   └── index.css         # Tailwind + design-system styles
 ├── server/
-│   ├── index.js          # Express API, holds the key, streams Claude
+│   ├── index.js          # Express API, holds the key, streams Claude (or demo)
+│   ├── mock.js           # canned demo answers used when no API key is set
 │   └── sha-data.js        # the entire SHA benefits knowledge base
 ├── tailwind.config.js    # brand / ink / mist design tokens
 ├── vite.config.js        # dev server + /api proxy to :3001

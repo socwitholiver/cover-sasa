@@ -1,18 +1,27 @@
-// Cover Sasa — backend. Holds the ANTHROPIC_API_KEY and answers coverage
+// CoverSasa — backend. Holds the ANTHROPIC_API_KEY and answers coverage
 // questions by feeding the SHA benefits data to Claude as context, then
 // streaming a plain-language answer back to the chat UI.
+//
+// Each answer ends with a reserved §§CARD§§ token followed by a one-line JSON
+// object describing the coverage. The frontend hides the raw JSON and renders
+// it as a "Coverage" card inside the chat.
+//
+// DEMO MODE: if no ANTHROPIC_API_KEY is set, the server streams realistic
+// canned answers (with cards) so the whole app can be test-run without a key.
 import express from "express";
 import cors from "cors";
 import Anthropic from "@anthropic-ai/sdk";
 import { SHA_KNOWLEDGE } from "./sha-data.js";
+import { mockAnswer } from "./mock.js";
 
 const app = express();
 app.use(cors());
 app.use(express.json());
 
-const client = new Anthropic(); // reads ANTHROPIC_API_KEY from env
+const HAS_KEY = !!process.env.ANTHROPIC_API_KEY;
+const client = HAS_KEY ? new Anthropic() : null; // reads ANTHROPIC_API_KEY from env
 
-const SYSTEM_PROMPT = `You are Cover Sasa, a friendly assistant that helps a patient or a hospital clerk at a Kenyan public hospital counter instantly understand what SHA (Social Health Authority) covers for the exact procedure or drug in front of them right now.
+const SYSTEM_PROMPT = `You are CoverSasa, a friendly assistant that helps a patient or a hospital clerk at a Kenyan public hospital counter instantly understand what SHA (Social Health Authority) covers for the exact procedure or drug in front of them right now.
 
 You have been given the official SHA benefits package below. Answer ONLY from it. This is the single source of truth:
 
@@ -33,7 +42,12 @@ HOW TO ANSWER — this is the whole point of the product:
 RULES:
 - If the specific service is not in the benefits data, say honestly that you can't confirm it and they should ask the SHA desk at the facility — do NOT invent a figure.
 - You give SHA coverage information, not medical advice. If asked what treatment they need, gently redirect them to a clinician.
-- Reassure, don't alarm. Many people are told to "lipa kwanza" (pay first) when they were actually covered — your job is to give them the confidence to ask.`;
+- Reassure, don't alarm. Many people are told to "lipa kwanza" (pay first) when they were actually covered — your job is to give them the confidence to ask.
+
+STRUCTURED CARD (required, always):
+After your short reply, output the reserved token §§CARD§§ on its own new line, then a SINGLE-LINE JSON object (no markdown, no code fence, no trailing text) with EXACTLY these keys:
+{"status":"covered|partial|not_covered|unknown","service":"<short name of what was asked>","publicCost":"<e.g. Ksh 0>","publicNote":"<short>","privateCost":"<e.g. Co-pay, or a figure>","privateNote":"<short>","notes":["<short point>","<short point>"],"nextStep":"<one short action>"}
+The § character is RESERVED — never use it anywhere except this token. If the service is not in the data, use status "unknown" with publicCost/privateCost set to "—". Keep every string very short. "service" and "notes" should be in the user's language; the fixed labels are added by the app.`;
 
 // Streaming chat endpoint (Server-Sent Events).
 app.post("/api/chat", async (req, res) => {
@@ -47,6 +61,23 @@ app.post("/api/chat", async (req, res) => {
   res.setHeader("Connection", "keep-alive");
   res.flushHeaders?.();
 
+  const write = (obj) => res.write(`data: ${JSON.stringify(obj)}\n\n`);
+
+  // ---- Demo mode: no API key → stream a canned, realistic answer ----
+  if (!HAS_KEY) {
+    const lastUser = [...messages].reverse().find((m) => m.role === "user");
+    const full = mockAnswer(lastUser?.content || "");
+    // Stream it out chunk-by-chunk so the UI behaves exactly as with Claude.
+    const chunks = full.match(/\S+\s*|\s+/g) || [full];
+    for (const c of chunks) {
+      write({ text: c });
+      await new Promise((r) => setTimeout(r, 18));
+    }
+    write({ done: true });
+    return res.end();
+  }
+
+  // ---- Live mode: stream from Claude ----
   try {
     const stream = client.messages.stream({
       model: "claude-opus-5",
@@ -56,21 +87,23 @@ app.post("/api/chat", async (req, res) => {
       messages: messages.map((m) => ({ role: m.role, content: m.content })),
     });
 
-    stream.on("text", (delta) => {
-      res.write(`data: ${JSON.stringify({ text: delta })}\n\n`);
-    });
+    stream.on("text", (delta) => write({ text: delta }));
 
     await stream.finalMessage();
-    res.write(`data: ${JSON.stringify({ done: true })}\n\n`);
+    write({ done: true });
     res.end();
   } catch (err) {
     console.error("Chat error:", err);
-    res.write(`data: ${JSON.stringify({ error: "Samahani, kuna hitilafu. Try again." })}\n\n`);
+    write({ error: "Samahani, kuna hitilafu. Try again." });
     res.end();
   }
 });
 
-app.get("/api/health", (_req, res) => res.json({ ok: true }));
+app.get("/api/health", (_req, res) => res.json({ ok: true, mode: HAS_KEY ? "live" : "demo" }));
 
 const PORT = process.env.PORT || 3001;
-app.listen(PORT, () => console.log(`Cover Sasa backend on http://localhost:${PORT}`));
+app.listen(PORT, () =>
+  console.log(
+    `CoverSasa backend on http://localhost:${PORT}  (${HAS_KEY ? "LIVE — using Claude" : "DEMO mode — no API key, serving canned answers"})`
+  )
+);
