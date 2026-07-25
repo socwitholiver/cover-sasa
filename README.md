@@ -103,10 +103,54 @@ npm run dev
 ```
 
 This starts both the frontend and backend together. Open the URL it prints
-(default **http://localhost:5173**) and start asking.
+(default **http://localhost:5173**) and start asking. Stop the servers with
+`Ctrl+C`.
 
 <sub>Prefer to run them separately? `npm run server` (API on :3001) and
 `npm run web` (UI on :5173) in two terminals.</sub>
+
+#### Run it from Command Prompt (Windows)
+
+One line — `cd` into the project and start it (adjust the path if yours differs):
+
+```bat
+cd /d "C:\Users\HP\Desktop\Cover Sasa" && npm run dev
+```
+
+First time only, install dependencies as well:
+
+```bat
+cd /d "C:\Users\HP\Desktop\Cover Sasa" && npm install && npm run dev
+```
+
+### Troubleshooting
+
+**`Error: listen EADDRINUSE ... :::3001`** — a previous backend is still holding
+port 3001 (usually from closing the window without pressing `Ctrl+C`). Free it,
+then run again.
+
+- **Command Prompt (cmd):**
+
+  ```bat
+  for /f "tokens=5" %a in ('netstat -ano ^| findstr :3001 ^| findstr LISTENING') do taskkill /F /PID %a
+  ```
+
+- **PowerShell:**
+
+  ```powershell
+  Get-NetTCPConnection -LocalPort 3001 -State Listen | ForEach-Object { Stop-Process -Id $_.OwningProcess -Force }
+  ```
+
+The same trick works for the Vite dev server on port **5173** — swap `3001` for
+`5173`. To avoid it, always stop the dev server with `Ctrl+C` so it releases the
+ports cleanly.
+
+**`'npm' is not recognized`** — Node.js isn't installed or isn't on your PATH.
+Install the Node.js 18+ LTS from [nodejs.org](https://nodejs.org/) and reopen the
+terminal.
+
+**`Cannot find module` / missing dependencies** — run `npm install` in the project
+folder before `npm run dev`.
 
 ## Try it
 
