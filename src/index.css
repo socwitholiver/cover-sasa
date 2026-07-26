@@ -14,17 +14,25 @@ body,
 }
 
 body {
-  background: #f6f8ff;
+  /* Soft vertical wash so surfaces read as one cohesive canvas */
+  background:
+    radial-gradient(120% 90% at 100% 0%, rgba(99, 120, 255, 0.06), transparent 55%),
+    linear-gradient(180deg, #f7f9ff 0%, #eef2ff 100%);
   color: #0d1c2e;
   -webkit-font-smoothing: antialiased;
   text-rendering: optimizeLegibility;
 }
 
-/* Subtle dotted texture on the chat canvas (matches the Stitch mock) */
+/* Subtle dotted texture + ambient aurora on the chat canvas.
+   Dots sit on top; three soft brand/lavender/sky glows give depth. */
 .dot-grid {
   background-color: #f6f8ff;
-  background-image: radial-gradient(rgba(12, 142, 80, 0.055) 1px, transparent 1px);
-  background-size: 22px 22px;
+  background-image:
+    radial-gradient(rgba(12, 142, 80, 0.055) 1px, transparent 1px),
+    radial-gradient(58% 52% at 10% -4%, rgba(18, 167, 95, 0.11), transparent 60%),
+    radial-gradient(54% 48% at 104% 6%, rgba(99, 120, 255, 0.1), transparent 62%),
+    radial-gradient(72% 60% at 50% 122%, rgba(14, 165, 233, 0.07), transparent 60%);
+  background-size: 22px 22px, 100% 100%, 100% 100%, 100% 100%;
 }
 
 /* typing dots */
@@ -57,9 +65,44 @@ body {
   animation: pop 0.32s cubic-bezier(0.2, 0.9, 0.3, 1.2) both;
 }
 
-/* animated coverage bar */
+/* animated coverage bar with a slow light sheen sweeping across it */
 .bar-fill {
+  position: relative;
+  overflow: hidden;
   transition: width 0.5s cubic-bezier(0.2, 0.8, 0.2, 1);
+}
+.bar-fill::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(
+    100deg,
+    transparent 20%,
+    rgba(255, 255, 255, 0.5) 50%,
+    transparent 80%
+  );
+  transform: translateX(-100%);
+  animation: sheen 2.6s ease-in-out infinite;
+}
+@keyframes sheen {
+  0% { transform: translateX(-100%); }
+  60%, 100% { transform: translateX(220%); }
+}
+
+/* brand-gradient headline numbers (SHA covers figure) */
+.stat-gradient {
+  background: linear-gradient(118deg, #12a75f 0%, #0a7241 100%);
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent;
+}
+
+/* honor reduced-motion preferences */
+@media (prefers-reduced-motion: reduce) {
+  .bar-fill::after,
+  .dot,
+  .rise,
+  .pop { animation: none !important; }
 }
 
 /* thin scrollbar */
@@ -80,3 +123,105 @@ body {
 
 /* google maps info window tidy-up */
 .gm-style .gm-style-iw-c { padding: 10px !important; border-radius: 12px !important; }
+
+/* ============================================================
+   DARK MODE  —  purely additive. Light mode above is untouched.
+   Toggled by `.dark` on <html>. html.dark scoping (0,1,1) beats
+   the single-class Tailwind utilities (0,1,0), and these rules
+   come after @tailwind utilities in source order.
+   ============================================================ */
+html.dark body {
+  background:
+    radial-gradient(120% 90% at 100% 0%, rgba(99, 120, 255, 0.1), transparent 55%),
+    linear-gradient(180deg, #0b1220 0%, #080e1a 100%);
+  color: #e8eefb;
+}
+
+html.dark .dot-grid {
+  background-color: #0b1220;
+  background-image:
+    radial-gradient(rgba(120, 220, 170, 0.05) 1px, transparent 1px),
+    radial-gradient(58% 52% at 10% -4%, rgba(18, 167, 95, 0.16), transparent 60%),
+    radial-gradient(54% 48% at 104% 6%, rgba(99, 120, 255, 0.14), transparent 62%),
+    radial-gradient(72% 60% at 50% 122%, rgba(14, 165, 233, 0.1), transparent 60%);
+}
+
+/* Surfaces ---------------------------------------------------- */
+html.dark .bg-surface,
+html.dark .bg-mist { background-color: #0b1220; }
+html.dark .bg-lav,
+html.dark .bg-lav2 { background-color: #1c2740; }
+
+html.dark .bg-white { background-color: #141f33; }
+html.dark .bg-white\/90,
+html.dark .bg-white\/85,
+html.dark .bg-white\/70,
+html.dark .bg-white\/60 { background-color: rgba(20, 31, 51, 0.82); }
+
+html.dark .bg-slate-50,
+html.dark .bg-slate-100 { background-color: #1c2740; }
+html.dark .hover\:bg-slate-50:hover,
+html.dark .hover\:bg-slate-100:hover { background-color: #222f4c; }
+html.dark .hover\:bg-white:hover { background-color: #1a2740; }
+
+/* Brand / status tint fills ---------------------------------- */
+html.dark .bg-brand-50 { background-color: rgba(30, 175, 110, 0.15); }
+html.dark .bg-brand-50\/70 { background-color: rgba(30, 175, 110, 0.12); }
+html.dark .hover\:bg-brand-50:hover { background-color: rgba(30, 175, 110, 0.2); }
+html.dark .bg-amber-50 { background-color: rgba(245, 158, 11, 0.14); }
+html.dark .bg-info-50 { background-color: rgba(14, 165, 233, 0.14); }
+html.dark .bg-rose-50 { background-color: rgba(244, 63, 94, 0.14); }
+
+/* Text -------------------------------------------------------- */
+html.dark .text-ink { color: #e8eefb; }
+html.dark .text-slate-600 { color: #c6cfe0; }
+html.dark .text-slate-500 { color: #9fabc2; }
+html.dark .text-slate-400 { color: #808da6; }
+html.dark .text-slate-300 { color: #5e6a84; }
+html.dark .placeholder\:text-slate-400::placeholder { color: #808da6; }
+html.dark .text-brand-700,
+html.dark .text-brand-600,
+html.dark .hover\:text-brand-700:hover,
+html.dark .hover\:text-brand-600:hover { color: #35d08a; }
+html.dark .text-brand-700\/70 { color: rgba(53, 208, 138, 0.75); }
+html.dark .text-amber-700 { color: #fbbf24; }
+html.dark .text-info-700,
+html.dark .text-info-600 { color: #38bdf8; }
+html.dark .text-rose-700 { color: #fb7185; }
+
+/* Borders + rings (soften light tints) ------------------------ */
+html.dark .border-line,
+html.dark .border-slate-200 { border-color: #29354f; }
+html.dark .border-brand-100,
+html.dark .border-brand-200 { border-color: rgba(53, 208, 138, 0.3); }
+html.dark .border-brand-300,
+html.dark .hover\:border-brand-300:hover,
+html.dark .border-brand-400,
+html.dark .focus-within\:border-brand-400:focus-within { border-color: rgba(53, 208, 138, 0.45); }
+html.dark .border-amber-100,
+html.dark .border-amber-200 { border-color: rgba(245, 158, 11, 0.3); }
+html.dark .border-info-100 { border-color: rgba(14, 165, 233, 0.3); }
+html.dark .border-rose-100 { border-color: rgba(244, 63, 94, 0.3); }
+
+html.dark .ring-brand-100,
+html.dark .focus-within\:ring-brand-100:focus-within { --tw-ring-color: rgba(53, 208, 138, 0.22); }
+html.dark .ring-amber-100 { --tw-ring-color: rgba(245, 158, 11, 0.22); }
+html.dark .ring-info-100 { --tw-ring-color: rgba(14, 165, 233, 0.22); }
+html.dark .ring-rose-100 { --tw-ring-color: rgba(244, 63, 94, 0.22); }
+html.dark .ring-slate-100 { --tw-ring-color: rgba(255, 255, 255, 0.06); }
+
+/* Progress track + brighter gradient headline number ---------- */
+html.dark .bg-slate-100 { background-color: #26324e; }
+html.dark .stat-gradient {
+  background: linear-gradient(118deg, #4ade9a 0%, #16a760 100%);
+  -webkit-background-clip: text;
+  background-clip: text;
+}
+
+/* Soften the card's inset top-highlight so it isn't a bright seam */
+html.dark .shadow-card {
+  box-shadow:
+    0 1px 2px rgba(0, 0, 0, 0.3),
+    0 12px 34px -14px rgba(0, 0, 0, 0.6),
+    inset 0 1px 0 rgba(255, 255, 255, 0.06);
+}

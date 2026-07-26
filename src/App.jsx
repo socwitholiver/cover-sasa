@@ -84,12 +84,27 @@ export default function App() {
   const [shaCardOpen, setShaCardOpen] = useState(false);
   const [historyOpen, setHistoryOpen] = useState(false);
   const [receipt, setReceipt] = useState(null); // receipt modal data
+  const [dark, setDark] = useState(false);
   const scrollRef = useRef(null);
   const inputRef = useRef(null);
 
   useEffect(() => {
     scrollRef.current?.scrollTo({ top: scrollRef.current.scrollHeight, behavior: "smooth" });
   }, [messages, busy]);
+
+  // Theme: restore saved choice, else follow the OS preference.
+  useEffect(() => {
+    const saved = localStorage.getItem("cs-theme");
+    const prefersDark = window.matchMedia?.("(prefers-color-scheme: dark)").matches;
+    setDark(saved ? saved === "dark" : !!prefersDark);
+  }, []);
+
+  useEffect(() => {
+    const root = document.documentElement;
+    root.classList.toggle("dark", dark);
+    root.style.colorScheme = dark ? "dark" : "light";
+    localStorage.setItem("cs-theme", dark ? "dark" : "light");
+  }, [dark]);
 
   async function send(text) {
     const question = (text ?? input).trim();
@@ -333,7 +348,15 @@ export default function App() {
               Facilities
             </button>
           </div>
-          <span className="ml-auto rounded-full border border-line bg-white/60 px-2.5 py-1 text-[11px] font-semibold text-brand-700 sm:ml-0">
+          <button
+            onClick={() => setDark((d) => !d)}
+            className="ml-auto flex h-8 w-8 items-center justify-center rounded-full border border-line bg-white/60 text-slate-500 transition hover:text-brand-700 sm:ml-0"
+            aria-label={dark ? "Switch to light mode" : "Switch to dark mode"}
+            title={dark ? "Light mode" : "Dark mode"}
+          >
+            {dark ? <IconSun className="h-4 w-4" /> : <IconMoon className="h-4 w-4" />}
+          </button>
+          <span className="rounded-full border border-line bg-white/60 px-2.5 py-1 text-[11px] font-semibold text-brand-700">
             🇰🇪 SHIF
           </span>
         </header>
@@ -554,6 +577,40 @@ function CoverageCard({ data, onShare, onAsk }) {
   return <CostCard data={data} svc={svc} onShare={onShare} />;
 }
 
+// Roll a number from 0 up to its target (easeOutCubic). Non-numbers (e.g.
+// "Varies") render as-is; honors prefers-reduced-motion.
+function useCountUp(target, duration = 560) {
+  const isNum = typeof target === "number";
+  const [val, setVal] = useState(isNum ? 0 : target);
+  useEffect(() => {
+    if (typeof target !== "number") {
+      setVal(target);
+      return;
+    }
+    const reduce = window.matchMedia?.("(prefers-reduced-motion: reduce)").matches;
+    if (reduce || target === 0) {
+      setVal(target);
+      return;
+    }
+    const start = performance.now();
+    let raf = 0;
+    const tick = (now) => {
+      const t = Math.min(1, (now - start) / duration);
+      const eased = 1 - Math.pow(1 - t, 3);
+      setVal(Math.round(target * eased));
+      if (t < 1) raf = requestAnimationFrame(tick);
+    };
+    raf = requestAnimationFrame(tick);
+    return () => cancelAnimationFrame(raf);
+  }, [target, duration]);
+  return val;
+}
+
+function AnimatedKES({ value, className }) {
+  const n = useCountUp(value);
+  return <span className={className}>{formatKES(n)}</span>;
+}
+
 function CostCard({ data, svc, onShare }) {
   const [facilityId, setFacilityId] = useState(DEFAULT_LEVEL);
   const lvl = levelById(facilityId);
@@ -622,22 +679,22 @@ function CostCard({ data, svc, onShare }) {
             <p className="text-[10.5px] font-semibold uppercase tracking-wide text-brand-700/70">
               SHA covers
             </p>
-            <p className="mt-0.5 text-[26px] font-extrabold leading-none text-brand-600">
-              {formatKES(bd.shaCovers)}
-            </p>
+            <AnimatedKES
+              value={bd.shaCovers}
+              className="stat-gradient mt-0.5 block text-[26px] font-extrabold leading-none text-brand-600"
+            />
             <p className="mt-1 text-[11px] text-slate-500">per {bd.unit} · paid to facility</p>
           </div>
           <div className="rounded-xl border border-line bg-slate-50 p-3.5">
             <p className="text-[10.5px] font-semibold uppercase tracking-wide text-slate-400">
               You pay
             </p>
-            <p
-              className={`mt-0.5 text-[26px] font-extrabold leading-none ${
+            <AnimatedKES
+              value={bd.youPayPublic}
+              className={`mt-0.5 block text-[26px] font-extrabold leading-none ${
                 bd.youPayPublic === 0 ? "text-brand-600" : "text-ink"
               }`}
-            >
-              {formatKES(bd.youPayPublic)}
-            </p>
+            />
             <p className="mt-1 text-[11px] text-slate-500">at a public facility</p>
           </div>
         </div>
@@ -1526,7 +1583,7 @@ function Stat({ label, value }) {
 function FakeQR() {
   const cells = Array.from({ length: 49 }, (_, i) => (i * 7 + 3) % 5 < 2);
   return (
-    <div className="grid grid-cols-7 gap-[2px] rounded-lg bg-white p-1.5">
+    <div className="grid grid-cols-7 gap-[2px] rounded-lg bg-[white] p-1.5">
       {cells.map((on, i) => (
         <span key={i} className={`h-2 w-2 rounded-[1px] ${on ? "bg-brand-800" : "bg-transparent"}`} />
       ))}
@@ -1671,6 +1728,23 @@ function IconSpark({ className }) {
     <svg className={className} viewBox="0 0 24 24" fill="currentColor">
       <path d="M12 2l1.8 5.5L19 9l-5.2 1.5L12 16l-1.8-5.5L5 9l5.2-1.5L12 2Z" />
       <path d="M19 14l.8 2.4L22 17l-2.2.6L19 20l-.8-2.4L16 17l2.2-.6L19 14Z" />
+    </svg>
+  );
+}
+
+function IconMoon({ className }) {
+  return (
+    <svg className={className} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+      <path d="M21 12.8A9 9 0 1 1 11.2 3a7 7 0 0 0 9.8 9.8Z" />
+    </svg>
+  );
+}
+
+function IconSun({ className }) {
+  return (
+    <svg className={className} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+      <circle cx="12" cy="12" r="4" />
+      <path d="M12 2v2M12 20v2M4.9 4.9l1.4 1.4M17.7 17.7l1.4 1.4M2 12h2M20 12h2M4.9 19.1l1.4-1.4M17.7 6.3l1.4-1.4" />
     </svg>
   );
 }
