@@ -16,16 +16,36 @@ export default {
           600: "#0C8E50", // hover / buttons
           700: "#0A7241",
           800: "#0A5A35",
+          900: "#083f26",
         },
-        ink: "#0E2A20", // dark green-navy headings
-        mist: "#F4F8F6", // app background
-        line: "#E4ECE8", // hairline borders
+        // Hospital blue — informational elements, links, secondary indicators.
+        info: {
+          50: "#EFF6FF",
+          100: "#DBEAFE",
+          200: "#BFDBFE",
+          500: "#0EA5E9",
+          600: "#0284C7",
+          700: "#0369A1",
+        },
+        ink: "#0D1C2E", // deep slate headings (from Clinical Precision)
+        // Stitch lavender-tinted surfaces
+        surface: "#f6f8ff",
+        lav: "#eaf0ff",
+        lav2: "#e6eeff",
+        mist: "#f6f8ff", // app background (kept name for compatibility)
+        line: "#E2E8F5", // hairline borders (soft lavender)
       },
       fontFamily: {
         sans: ["Inter", "system-ui", "sans-serif"],
       },
       boxShadow: {
-        card: "0 1px 2px rgba(14,42,32,0.05), 0 8px 24px -12px rgba(14,42,32,0.12)",
+        card: "0 1px 2px rgba(13,28,46,0.04), 0 10px 30px -14px rgba(13,28,46,0.14)",
+        lift: "0 16px 40px -18px rgba(13,28,46,0.28)",
+      },
+      borderRadius: {
+        xl: "1rem",
+        "2xl": "1.25rem",
+        "3xl": "1.75rem",
       },
     },
   },

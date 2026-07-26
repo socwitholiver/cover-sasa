@@ -14,16 +14,16 @@ body,
 }
 
 body {
-  background: #f4f8f6;
-  color: #0e2a20;
+  background: #f6f8ff;
+  color: #0d1c2e;
   -webkit-font-smoothing: antialiased;
   text-rendering: optimizeLegibility;
 }
 
 /* Subtle dotted texture on the chat canvas (matches the Stitch mock) */
 .dot-grid {
-  background-color: #f4f8f6;
-  background-image: radial-gradient(rgba(12, 142, 80, 0.06) 1px, transparent 1px);
+  background-color: #f6f8ff;
+  background-image: radial-gradient(rgba(12, 142, 80, 0.055) 1px, transparent 1px);
   background-size: 22px 22px;
 }
 
@@ -38,7 +38,7 @@ body {
 .dot:nth-child(2) { animation-delay: 0.2s; }
 .dot:nth-child(3) { animation-delay: 0.4s; }
 
-/* message entrance */
+/* message / element entrance */
 @keyframes rise {
   from { opacity: 0; transform: translateY(6px); }
   to { opacity: 1; transform: translateY(0); }
@@ -47,8 +47,36 @@ body {
   animation: rise 0.28s ease-out both;
 }
 
+/* number roll-in when the facility tier changes */
+@keyframes pop {
+  0% { transform: scale(0.92); opacity: 0.4; }
+  60% { transform: scale(1.03); }
+  100% { transform: scale(1); opacity: 1; }
+}
+.pop {
+  animation: pop 0.32s cubic-bezier(0.2, 0.9, 0.3, 1.2) both;
+}
+
+/* animated coverage bar */
+.bar-fill {
+  transition: width 0.5s cubic-bezier(0.2, 0.8, 0.2, 1);
+}
+
 /* thin scrollbar */
 .scroll-thin::-webkit-scrollbar { width: 8px; }
 .scroll-thin::-webkit-scrollbar-thumb { background: rgba(12, 142, 80, 0.18); border-radius: 4px; }
 .scroll-thin::-webkit-scrollbar-thumb:hover { background: rgba(12, 142, 80, 0.32); }
 .scroll-thin::-webkit-scrollbar-track { background: transparent; }
+
+/* receipt "torn" edge */
+.receipt-edge {
+  -webkit-mask-image: radial-gradient(circle at 8px 8px, transparent 7px, #000 8px);
+  mask-image: radial-gradient(circle at 8px 8px, transparent 7px, #000 8px);
+  -webkit-mask-size: 16px 16px;
+  mask-size: 16px 16px;
+  -webkit-mask-position: -8px 0;
+  mask-position: -8px 0;
+}
+
+/* google maps info window tidy-up */
+.gm-style .gm-style-iw-c { padding: 10px !important; border-radius: 12px !important; }

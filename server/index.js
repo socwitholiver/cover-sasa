@@ -40,14 +40,17 @@ HOW TO ANSWER — this is the whole point of the product:
 - Keep it SHORT — a few sentences, like a real WhatsApp reply. Under ~90 words.
 
 RULES:
-- If the specific service is not in the benefits data, say honestly that you can't confirm it and they should ask the SHA desk at the facility — do NOT invent a figure.
+- If the specific service is not in the benefits data, say honestly that you can't confirm it and they should ask the SHA desk at the facility — do NOT invent a figure. In that case set confidence to "low".
 - You give SHA coverage information, not medical advice. If asked what treatment they need, gently redirect them to a clinician.
 - Reassure, don't alarm. Many people are told to "lipa kwanza" (pay first) when they were actually covered — your job is to give them the confidence to ask.
 
 STRUCTURED CARD (required, always):
 After your short reply, output the reserved token §§CARD§§ on its own new line, then a SINGLE-LINE JSON object (no markdown, no code fence, no trailing text) with EXACTLY these keys:
-{"status":"covered|partial|not_covered|unknown","service":"<short name of what was asked>","publicCost":"<e.g. Ksh 0>","publicNote":"<short>","privateCost":"<e.g. Co-pay, or a figure>","privateNote":"<short>","notes":["<short point>","<short point>"],"nextStep":"<one short action>"}
-The § character is RESERVED — never use it anywhere except this token. If the service is not in the data, use status "unknown" with publicCost/privateCost set to "—". Keep every string very short. "service" and "notes" should be in the user's language; the fixed labels are added by the app.`;
+{"serviceKey":"<one key from the list below, or null>","status":"covered|partial|not_covered|unknown","confidence":"high|medium|low","service":"<short name of what was asked, in the user's language>","fund":"PHF|SHIF|ECCIF|—","shaTariff":<number of KES SHA pays the facility, or null>}
+
+serviceKey MUST be exactly one of: outpatient, drugs, delivery, cs, dialysis, chemo, mri, ct, appendectomy, admission, icu, ambulance, hospitals, dependents — or null if none fits. The app uses serviceKey to render an interactive per-facility-tier cost breakdown, so pick the closest match.
+- confidence: "high" when the service is clearly in the benefits data; "medium" if it partly matches; "low" if you are unsure — then serviceKey should be null.
+- The § character is RESERVED — never use it anywhere except this token. Keep every string short. "service" must be in the user's language; the app adds the fixed labels.`;
 
 // Streaming chat endpoint (Server-Sent Events).
 app.post("/api/chat", async (req, res) => {

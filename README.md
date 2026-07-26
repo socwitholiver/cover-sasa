@@ -29,10 +29,49 @@ would actually use, and it always ends with the out-of-pocket number:
 > _"Yes — SHA covers a C-section. At a public hospital you pay **Ksh 0**. SHA pays
 > the hospital Ksh 30,000, covering about 3 days. Bring your SHA card and ID."_
 
-Alongside the plain reply, every answer renders a **Coverage card** — an at-a-glance
-summary of status (covered / partial / not covered), the public vs. private
-out-of-pocket cost, key limits, and the next step to take. The app also includes a
-**Digital SHA Card** view and quick-action chips for the most common questions.
+Alongside the plain reply, every answer renders an **interactive Coverage card**.
+Five things competitors usually skip — all built in:
+
+### 1. 💰 Cost breakdown, not just yes/no
+
+Every card shows a clean money split — **SHA covers: KES X | You pay: KES Y** — with
+a proportion bar, instead of a wall of text. The number that matters is on screen in
+big type.
+
+### 2. 🏥 Facility-level answers (the precision layer)
+
+Cover changes with the facility tier, so the card does too. A **facility-level
+toggle** (Dispensary → Sub-county → County → National referral) recomputes the
+answer _live_:
+
+- A **C-section** is KES 0 at a Level-4 public hospital, but simply **not offered at
+  a dispensary** — so the card says _"you'll be referred to a Sub-county (Level 4)
+  hospital"_ instead of a misleading number.
+- An **inpatient bed** rises KES 2,240 → 4,480 per day as you move up the levels —
+  the card shows the exact rate for the tier you pick.
+
+This runs entirely client-side from a shared coverage engine, so it's instant.
+
+### 3. 🧾 Shareable receipt-style answer
+
+One tap turns any answer into a **receipt card** you can **share on WhatsApp**, copy
+as text, or **download as a PNG** — so a patient or clerk can show it at the counter
+as proof. Built for the WhatsApp-first Kenyan reality.
+
+### 4. ⚠️ Confidence flag (responsible AI)
+
+If the benefits data doesn't clearly cover a case, CoverSasa **won't guess a
+figure**. It flags **"Not certain — please confirm at the SHA office"** rather than
+inventing a number, and marks medium-confidence answers as indicative.
+
+### 5. 🗺️ Hospital Finder (Google Maps)
+
+An interactive map of SHA-accredited facilities across Kenya, colour-coded by
+level, with search, level filters, and a **"What's covered here?"** action that jumps
+back into chat scoped to that facility's tier.
+
+Plus a **Digital SHA Card** view, a **Recent Coverage** history drawer, and bilingual
+Swahili/English throughout.
 
 ## How it works
 
@@ -51,9 +90,11 @@ answers stay accurate and fast with zero retrieval plumbing. To update coverage,
 edit that one file.
 
 Each answer also carries a reserved `§§CARD§§` token followed by a one-line JSON
-object describing the coverage. The frontend hides the raw JSON and renders it as
-the Coverage card, so the structured data and the chat reply come from the same
-stream.
+object: `{ serviceKey, status, confidence, service, fund, shaTariff }`. The frontend
+hides the raw JSON and, from `serviceKey`, looks the service up in the **shared
+coverage engine** ([`src/coverage.js`](src/coverage.js)) to render the interactive,
+facility-tier cost breakdown. That one module is imported by **both** the UI and the
+backend demo answers, so the tariffs on the cards can never drift from the data.
 
 ### Demo mode (no API key)
 
@@ -67,9 +108,11 @@ which mode is active (`"live"` or `"demo"`).
 
 | Layer     | Tech                                                             |
 | --------- | --------------------------------------------------------------- |
-| Frontend  | Vite · React 18 · Tailwind CSS (light "Navigator" design system) |
+| Frontend  | Vite · React 18 · Tailwind CSS (emerald + lavender Stitch design system) |
 | Backend   | Node · Express · Server-Sent Events streaming                   |
 | AI        | Anthropic Claude (`claude-opus-5`) via the official SDK          |
+| Maps      | Google Maps JavaScript API (Hospital Finder)                    |
+| Engine    | Shared client/server coverage engine — one source of truth for tariffs |
 
 ## Getting started
 
@@ -156,9 +199,15 @@ folder before `npm run dev`.
 
 Tap a suggestion chip in the app, or type one of these live:
 
-- _"Je, SHA inalipa CS?"_ → covered, **Ksh 0** at a public hospital.
+- _"Je, SHA inalipa CS?"_ → covered, **Ksh 0** at a public hospital — then toggle the
+  card to **Dispensary** and watch it switch to a referral.
+- _"How much is an inpatient bed per day?"_ → drag the facility level and watch the
+  rate change **KES 2,240 → 4,480**.
 - _"Does SHA cover dialysis? How much per session?"_ → **Ksh 10,650** per session.
-- _"Mtoto ana homa, nikienda hospitali ya serikali nitalipa ngapi?"_ → outpatient covered, **Ksh 0**.
+- _"Does SHA cover botox?"_ → **"Not certain — confirm at the SHA office"** (no guessing).
+
+Then tap **Share receipt** on any card to get a WhatsApp-ready proof card, or open the
+**Hospital Finder** to explore accredited facilities on the map.
 
 ## Project structure
 
@@ -166,17 +215,27 @@ Tap a suggestion chip in the app, or type one of these live:
 cover-sasa/
 ├── index.html            # app shell, fonts, favicon
 ├── src/
-│   ├── App.jsx           # chat UI + streaming client
+│   ├── App.jsx           # chat UI, interactive cards, receipt, Hospital Finder
+│   ├── coverage.js       # SHARED coverage engine — tiers, cost split, confidence
+│   ├── config.js         # Google Maps key + demo facility dataset
 │   ├── main.jsx          # React entry
 │   └── index.css         # Tailwind + design-system styles
 ├── server/
 │   ├── index.js          # Express API, holds the key, streams Claude (or demo)
-│   ├── mock.js           # canned demo answers used when no API key is set
-│   └── sha-data.js        # the entire SHA benefits knowledge base
-├── tailwind.config.js    # brand / ink / mist design tokens
+│   ├── mock.js           # canned demo answers (imports the shared engine)
+│   └── sha-data.js        # the SHA benefits knowledge base (live-mode context)
+├── tailwind.config.js    # brand / ink / lavender design tokens
 ├── vite.config.js        # dev server + /api proxy to :3001
-└── .env.example          # copy to .env and add your key
+└── .env.example          # copy to .env and add your keys
 ```
+
+### Google Maps key
+
+The Hospital Finder uses the Google Maps JavaScript API. For the demo a key is
+inlined in [`src/config.js`](src/config.js) so the app works out of the box. For
+production, set `VITE_GOOGLE_MAPS_KEY` in `.env` and **restrict the key by HTTP
+referrer** in the Google Cloud console. If the map can't load (e.g. offline), the
+Finder degrades gracefully to the accredited-facility list.
 
 ## Data source
 
