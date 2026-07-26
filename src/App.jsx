@@ -226,7 +226,7 @@ export default function App() {
         <div className="flex items-center gap-3 px-5 py-5">
           <Logo className="h-9 w-9" />
           <div className="leading-tight">
-            <p className="text-[15px] font-extrabold tracking-tight">
+            <p className="font-display text-[15px] font-extrabold tracking-tight">
               Cover<span className="text-brand-600">Sasa</span>
             </p>
             <p className="text-[11px] font-medium text-slate-400">Health Navigator</p>
@@ -315,7 +315,7 @@ export default function App() {
           </div>
 
           <div className="leading-tight">
-            <h1 className="text-[15px] font-bold">
+            <h1 className="font-display text-[15px] font-bold">
               {view === "finder" ? "Hospital Finder" : "SHA Assistant"}
             </h1>
             <p className="flex items-center gap-1 text-[11.5px] font-medium text-brand-600">
@@ -640,7 +640,7 @@ function CostCard({ data, svc, onShare }) {
           <s.Icon className="h-5 w-5" />
         </span>
         <div className="leading-tight">
-          <p className={`text-[13px] font-extrabold tracking-wide ${s.text}`}>{s.label}</p>
+          <p className={`font-display text-[13px] font-extrabold tracking-wide ${s.text}`}>{s.label}</p>
           <p className="text-[11px] font-medium text-slate-500">{data.service}</p>
         </div>
         <span className="ml-auto rounded-full bg-white/70 px-2 py-0.5 text-[10px] font-bold text-slate-500">
@@ -681,7 +681,7 @@ function CostCard({ data, svc, onShare }) {
             </p>
             <AnimatedKES
               value={bd.shaCovers}
-              className="stat-gradient mt-0.5 block text-[26px] font-extrabold leading-none text-brand-600"
+              className="stat-gradient mt-0.5 block font-display text-[26px] font-extrabold leading-none text-brand-600"
             />
             <p className="mt-1 text-[11px] text-slate-500">per {bd.unit} · paid to facility</p>
           </div>
@@ -691,7 +691,7 @@ function CostCard({ data, svc, onShare }) {
             </p>
             <AnimatedKES
               value={bd.youPayPublic}
-              className={`mt-0.5 block text-[26px] font-extrabold leading-none ${
+              className={`mt-0.5 block font-display text-[26px] font-extrabold leading-none ${
                 bd.youPayPublic === 0 ? "text-brand-600" : "text-ink"
               }`}
             />
@@ -779,7 +779,7 @@ function InfoCard({ data, svc, onAsk }) {
           <IconInfo className="h-5 w-5" />
         </span>
         <div className="leading-tight">
-          <p className="text-[13px] font-extrabold tracking-wide text-info-700">GOOD TO KNOW</p>
+          <p className="font-display text-[13px] font-extrabold tracking-wide text-info-700">GOOD TO KNOW</p>
           <p className="text-[11px] font-medium text-slate-500">{data.service}</p>
         </div>
       </div>
@@ -811,7 +811,7 @@ function UnknownCard({ data, onAsk }) {
           <IconInfo className="h-5 w-5" />
         </span>
         <div className="leading-tight">
-          <p className="text-[13px] font-extrabold tracking-wide text-amber-700">NOT CERTAIN</p>
+          <p className="font-display text-[13px] font-extrabold tracking-wide text-amber-700">NOT CERTAIN</p>
           <p className="text-[11px] font-medium text-slate-500">{data?.service || "Your question"}</p>
         </div>
       </div>
@@ -924,7 +924,7 @@ function ReceiptModal({ data, onClose }) {
             <div className="flex items-center gap-2">
               <Logo className="h-7 w-7" />
               <div className="leading-tight">
-                <p className="text-[13px] font-extrabold">CoverSasa</p>
+                <p className="font-display text-[13px] font-extrabold">CoverSasa</p>
                 <p className="text-[10px] text-brand-100">SHA Coverage Receipt</p>
               </div>
             </div>
@@ -1043,18 +1043,18 @@ function downloadReceipt(data, ref, dateStr) {
   ctx.fillStyle = "#0A7241";
   ctx.fillRect(0, 0, W, 92);
   ctx.fillStyle = "#ffffff";
-  ctx.font = "700 26px Inter, sans-serif";
+  ctx.font = "700 26px 'Space Grotesk', sans-serif";
   ctx.fillText("CoverSasa", 40, 46);
-  ctx.font = "400 14px Inter, sans-serif";
+  ctx.font = "400 14px 'Plus Jakarta Sans', sans-serif";
   ctx.fillStyle = "#CFF4DF";
   ctx.fillText("SHA Coverage Receipt", 40, 70);
 
   let y = 140;
   const line = (label, value, opts = {}) => {
-    ctx.font = "500 14px Inter, sans-serif";
+    ctx.font = "500 14px 'Plus Jakarta Sans', sans-serif";
     ctx.fillStyle = "#94a3b8";
     ctx.fillText(label, 40, y);
-    ctx.font = (opts.bold ? "700 " : "600 ") + "15px Inter, sans-serif";
+    ctx.font = (opts.bold ? "700 " : "600 ") + "15px 'Plus Jakarta Sans', sans-serif";
     ctx.fillStyle = opts.color || "#0D1C2E";
     ctx.textAlign = "right";
     ctx.fillText(String(value), W - 40, y);
@@ -1078,13 +1078,13 @@ function downloadReceipt(data, ref, dateStr) {
   y += 40;
 
   // big split
-  ctx.font = "600 12px Inter, sans-serif";
+  ctx.font = "600 12px 'Plus Jakarta Sans', sans-serif";
   ctx.fillStyle = "#0A7241";
   ctx.fillText("SHA COVERS", 40, y);
   ctx.fillStyle = "#94a3b8";
   ctx.fillText("YOU PAY", 320, y);
   y += 34;
-  ctx.font = "800 30px Inter, sans-serif";
+  ctx.font = "700 30px 'Space Grotesk', sans-serif";
   ctx.fillStyle = "#0C8E50";
   ctx.fillText(formatKES(data.shaCovers), 40, y);
   ctx.fillStyle = data.youPay === 0 ? "#0C8E50" : "#0D1C2E";
@@ -1092,7 +1092,7 @@ function downloadReceipt(data, ref, dateStr) {
   y += 40;
 
   if (data.confidence === "low") {
-    ctx.font = "600 13px Inter, sans-serif";
+    ctx.font = "600 13px 'Plus Jakarta Sans', sans-serif";
     ctx.fillStyle = "#b45309";
     ctx.fillText("⚠  Not certain — confirm at the SHA office.", 40, y);
     y += 30;
@@ -1113,7 +1113,7 @@ function downloadReceipt(data, ref, dateStr) {
   ctx.fillStyle = "#64748b";
   ctx.fillText(ref, 40, y);
   y += 24;
-  ctx.font = "400 13px Inter, sans-serif";
+  ctx.font = "400 13px 'Plus Jakarta Sans', sans-serif";
   ctx.fillStyle = "#94a3b8";
   ctx.fillText(dateStr, 40, y);
   y += 22;
@@ -1255,7 +1255,7 @@ function HospitalFinder({ onAsk }) {
       <div className="mx-auto w-full max-w-5xl">
         {/* Hero */}
         <div className="overflow-hidden rounded-2xl bg-gradient-to-br from-brand-700 to-brand-800 p-6 text-white shadow-card md:p-8">
-          <h2 className="text-2xl font-extrabold md:text-3xl">Facility Coverage Guide</h2>
+          <h2 className="font-display text-2xl font-extrabold md:text-3xl">Facility Coverage Guide</h2>
           <p className="mt-1.5 max-w-xl text-[13.5px] text-brand-100">
             Find out where your cover works across Kenya's healthcare levels. Search a hospital, county, or
             level to see accredited facilities near you.
@@ -1441,7 +1441,7 @@ function TierCard({ color, title, sub, heading, items, tag, muted }) {
           {tag}
         </span>
       </div>
-      <p className="mt-3 text-[16px] font-extrabold text-ink">{title}</p>
+      <p className="mt-3 font-display text-[16px] font-extrabold text-ink">{title}</p>
       <p className="text-[12px] text-slate-500">{sub}</p>
       <div className="mt-3 rounded-xl bg-lav p-3">
         <p className="text-[13px] font-bold text-ink">{heading}</p>
@@ -1526,7 +1526,7 @@ function ShaCardModal({ onClose }) {
             <div className="relative flex items-center justify-between">
               <div className="flex items-center gap-2">
                 <Logo className="h-7 w-7" />
-                <span className="text-[13px] font-extrabold tracking-tight">
+                <span className="font-display text-[13px] font-extrabold tracking-tight">
                   Cover<span className="text-brand-200">Sasa</span>
                 </span>
               </div>

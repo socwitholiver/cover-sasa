@@ -37,7 +37,10 @@ export default {
         line: "#E2E8F5", // hairline borders (soft lavender)
       },
       fontFamily: {
-        sans: ["Inter", "system-ui", "sans-serif"],
+        // Body (Apex look-alike) — soft-cornered geometric humanist.
+        sans: ["Plus Jakarta Sans", "Inter", "system-ui", "sans-serif"],
+        // Headings / wordmark (Ark look-alike) — modern neo-grotesque.
+        display: ["Space Grotesk", "Inter", "system-ui", "sans-serif"],
       },
       boxShadow: {
         card: "0 1px 2px rgba(13,28,46,0.04), 0 10px 30px -14px rgba(13,28,46,0.14), inset 0 1px 0 rgba(255,255,255,0.65)",
