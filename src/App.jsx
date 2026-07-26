@@ -896,8 +896,31 @@ function ReceiptModal({ data, onClose }) {
     confidence: data.confidence,
   });
 
-  const onWhatsApp = () =>
+  const openWhatsAppText = () =>
     window.open(`https://wa.me/?text=${encodeURIComponent(shareText)}`, "_blank", "noopener");
+
+  // On mobile, share the actual PDF through the native sheet (so it lands in
+  // WhatsApp as a proper document). On desktop, fall back to the text link.
+  const onShare = async () => {
+    try {
+      const file = new File([receiptPdfBlob(data, ref, dateStr)], `coversasa-${ref}.pdf`, {
+        type: "application/pdf",
+      });
+      if (navigator.canShare?.({ files: [file] })) {
+        try {
+          await navigator.share({ files: [file], title: "CoverSasa — SHA Coverage Receipt", text: shareText });
+        } catch (e) {
+          if (e?.name !== "AbortError") openWhatsAppText(); // ignore user-cancel
+        }
+        return;
+      }
+    } catch (e) {
+      /* PDF/share unsupported — fall through to the text link */
+    }
+    openWhatsAppText();
+  };
+
+  const onPdf = () => downloadReceiptPdf(data, ref, dateStr);
 
   const onCopy = async () => {
     try {
@@ -989,24 +1012,30 @@ function ReceiptModal({ data, onClose }) {
         </div>
 
         {/* Share actions */}
-        <div className="mt-3 grid grid-cols-3 gap-2">
+        <div className="mt-3 grid grid-cols-2 gap-2">
           <button
-            onClick={onWhatsApp}
+            onClick={onShare}
             className="flex items-center justify-center gap-1.5 rounded-xl bg-[#25D366] px-3 py-2.5 text-[12.5px] font-semibold text-white shadow-lg transition hover:-translate-y-0.5"
           >
             <IconWhatsApp className="h-4 w-4" /> WhatsApp
           </button>
           <button
-            onClick={onCopy}
-            className="flex items-center justify-center gap-1.5 rounded-xl border border-line bg-white px-3 py-2.5 text-[12.5px] font-semibold text-slate-600 transition hover:bg-slate-50"
+            onClick={onPdf}
+            className="flex items-center justify-center gap-1.5 rounded-xl bg-brand-600 px-3 py-2.5 text-[12.5px] font-semibold text-white shadow-lg transition hover:-translate-y-0.5 hover:bg-brand-700"
           >
-            <IconCopy className="h-4 w-4" /> {copied ? "Copied!" : "Copy"}
+            <IconReceipt className="h-4 w-4" /> Download PDF
           </button>
           <button
             onClick={onDownload}
             className="flex items-center justify-center gap-1.5 rounded-xl border border-line bg-white px-3 py-2.5 text-[12.5px] font-semibold text-slate-600 transition hover:bg-slate-50"
           >
             <IconDownload className="h-4 w-4" /> PNG
+          </button>
+          <button
+            onClick={onCopy}
+            className="flex items-center justify-center gap-1.5 rounded-xl border border-line bg-white px-3 py-2.5 text-[12.5px] font-semibold text-slate-600 transition hover:bg-slate-50"
+          >
+            <IconCopy className="h-4 w-4" /> {copied ? "Copied!" : "Copy text"}
           </button>
         </div>
       </div>
@@ -1023,11 +1052,14 @@ function Row({ label, value, strong }) {
   );
 }
 
-// Draw the receipt to a canvas and trigger a PNG download. Self-contained so it
-// works offline with no external libraries.
-function downloadReceipt(data, ref, dateStr) {
-  const W = 560;
-  const H = 620;
+// Draw the receipt onto an offscreen canvas. Self-contained (no libraries) so it
+// works offline and can be exported as PNG, PDF, or shared as a file.
+const RECEIPT_W = 560;
+const RECEIPT_H = 620;
+
+function renderReceiptCanvas(data, ref, dateStr) {
+  const W = RECEIPT_W;
+  const H = RECEIPT_H;
   const dpr = 2;
   const c = document.createElement("canvas");
   c.width = W * dpr;
@@ -1119,11 +1151,64 @@ function downloadReceipt(data, ref, dateStr) {
   y += 22;
   ctx.fillText("Show this at the counter · not medical advice", 40, y);
 
-  const url = c.toDataURL("image/png");
+  return c;
+}
+
+function downloadReceipt(data, ref, dateStr) {
+  const c = renderReceiptCanvas(data, ref, dateStr);
   const a = document.createElement("a");
-  a.href = url;
+  a.href = c.toDataURL("image/png");
   a.download = `coversasa-${ref}.png`;
   a.click();
+}
+
+function downloadReceiptPdf(data, ref, dateStr) {
+  triggerBlobDownload(receiptPdfBlob(data, ref, dateStr), `coversasa-${ref}.pdf`);
+}
+
+// Wrap the rendered receipt into a single-page PDF. The receipt is embedded as a
+// JPEG (DCTDecode) so we can hand-build a valid PDF with zero libraries.
+function receiptPdfBlob(data, ref, dateStr) {
+  const canvas = renderReceiptCanvas(data, ref, dateStr);
+  const jpeg = atob(canvas.toDataURL("image/jpeg", 0.95).split(",")[1]);
+  const imgW = canvas.width;
+  const imgH = canvas.height;
+  const content = `q ${RECEIPT_W} 0 0 ${RECEIPT_H} 0 0 cm /Im0 Do Q`;
+  const objs = [
+    "<</Type/Catalog/Pages 2 0 R>>",
+    "<</Type/Pages/Kids[3 0 R]/Count 1>>",
+    `<</Type/Page/Parent 2 0 R/MediaBox[0 0 ${RECEIPT_W} ${RECEIPT_H}]/Resources<</XObject<</Im0 5 0 R>>>>/Contents 4 0 R>>`,
+    `<</Length ${content.length}>>\nstream\n${content}\nendstream`,
+  ];
+
+  let pdf = "%PDF-1.3\n";
+  const offsets = [];
+  for (let i = 0; i < 4; i++) {
+    offsets[i + 1] = pdf.length;
+    pdf += `${i + 1} 0 obj\n${objs[i]}\nendobj\n`;
+  }
+  offsets[5] = pdf.length;
+  pdf += `5 0 obj\n<</Type/XObject/Subtype/Image/Width ${imgW}/Height ${imgH}/ColorSpace/DeviceRGB/BitsPerComponent 8/Filter/DCTDecode/Length ${jpeg.length}>>\nstream\n`;
+  pdf += jpeg + "\nendstream\nendobj\n";
+
+  const xrefStart = pdf.length;
+  let xref = "xref\n0 6\n0000000000 65535 f \n";
+  for (let i = 1; i <= 5; i++) xref += String(offsets[i]).padStart(10, "0") + " 00000 n \n";
+  pdf += xref + `trailer\n<</Size 6/Root 1 0 R>>\nstartxref\n${xrefStart}\n%%EOF`;
+
+  // Every character is Latin-1 (incl. the JPEG bytes), so char index == byte offset.
+  const bytes = new Uint8Array(pdf.length);
+  for (let i = 0; i < pdf.length; i++) bytes[i] = pdf.charCodeAt(i) & 0xff;
+  return new Blob([bytes], { type: "application/pdf" });
+}
+
+function triggerBlobDownload(blob, filename) {
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement("a");
+  a.href = url;
+  a.download = filename;
+  a.click();
+  setTimeout(() => URL.revokeObjectURL(url), 1500);
 }
 
 /* ---------------- Hospital Finder (Google Maps) ---------------- */
